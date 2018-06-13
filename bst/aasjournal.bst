@@ -544,7 +544,7 @@ FUNCTION {format.note}
 FUNCTION {format.title}
 { title empty$
     { "" }
-    { title
+    { "``" title * "''" *
     }
   if$
 }
@@ -656,15 +656,7 @@ FUNCTION {make.full.names}
 
 FUNCTION {output.bibitem}
 { newline$
-  "\bibitem[{" write$
-  label write$
-  ")" make.full.names duplicate$ short.list =
-     { pop$ }
-     { * }
-   if$
-  "}]{" * write$
-  cite$ write$
-  "}" write$
+  "\item" write$
   newline$
   ""
   before.all 'output.state :=
@@ -716,7 +708,6 @@ FUNCTION {format.date}
        pop$ "????" }
     'skip$
   if$
-  extra.label *
   before.all 'output.state :=
   after.sentence 'output.state :=
 }
@@ -900,7 +891,7 @@ FUNCTION {format.journal}
 }
 
 FUNCTION {format.journal.pages}
-{ pages empty$
+{ pages missing$ pages empty$ +
     'skip$
     { duplicate$ empty$
         { pop$ format.pages }
@@ -1012,20 +1003,7 @@ FUNCTION {format.publisher}
             'skip$
             { ": " * }
           if$
-          url empty$
-            { doi empty$
-              { publisher * }
-              { "\hypersetup{urlcolor=magenta}" *
-                "\href{https://dx.doi.org/" * doi *
-                "}{" * publisher *
-                "}" * }
-              if$
-            }
-            { "\hypersetup{urlcolor=magenta}" *
-              "\href{" * url *
-              "}{" * publisher *
-              "}" * }
-          if$
+          publisher *
         }
       if$
       ")" *
@@ -1203,6 +1181,7 @@ FUNCTION {format.eprint}
     }
   if$
 }
+
 % Formats a persistent identifier (PID)
 % (typically a DOI or an eprint id)
 % You can easily swap the order of which PID
@@ -1254,6 +1233,9 @@ FUNCTION {article}
       format.journal.pages * "}" * }
   if$
   format.note output
+  " \\ " swap$ write$
+  before.all 'output.state :=
+  format.title "title" output.check
   fin.entry
 }
 
@@ -1286,7 +1268,7 @@ FUNCTION {book}
 %  if$
   format.pages output
   format.note output
-%  format.pid output
+  format.pid output
   fin.entry
 }
 
@@ -1752,68 +1734,10 @@ FUNCTION {initialize.extra.label.stuff}
   #0 'number.label :=
 }
 
-INTEGERS { a b aneg bneg }
-%% takes two arguments a and b, and returns q = a/b, and the remainder a-q*b
-FUNCTION {div} {
-  'a :=
-  'b :=
-  a #0 <
-    { #1 'aneg :=
-      #0 a - 'a := }
-    { #0 'aneg := }
-  if$
-  b #0 <
-    { #1 'bneg :=
-      #0 b - 'b :=
-    }
-    { #0 'bneg := }
-  if$
-  b #0 =
-    {
-      "Division by zero requested, will return 0 0" * warning$
-      #0 #0
-    }
-    {
-      #0                 %% initialize quotient on stack
-      { a b > a b = or }
-      { a b - 'a :=      %% decrement a by b
-        #1 +             %% increment value on stack
-      }
-      while$
-      aneg
-        {
-          a #0 >
-            { b a - 'a :=
-               #-1 swap$ -
-            }
-            { #0 swap$ - }
-          if$
-        }
-        {}
-      if$
-      bneg
-        { #0 swap$ - }
-        {}
-      if$
-      a                  %% push remainder
-    }
-  if$
-}
-
 FUNCTION {forward.pass}
 { last.label label =
     { last.extra.num #1 + 'last.extra.num :=
-%      last.extra.num int.to.chr$ 'extra.label :=
-      last.extra.num #122 >
-        {
-          last.extra.num #97 - #26 swap$ div
-          #97 + int.to.chr$                   %% remainder; 0..25 -> a..z
-          swap$ #96 + int.to.chr$             %% quotient;  1..26 -> a..z
-          swap$ *
-          'extra.label :=
-        }
-        { last.extra.num int.to.chr$ 'extra.label := }
-      if$
+      last.extra.num int.to.chr$ 'extra.label :=
     }
     { "a" chr.to.int$ 'last.extra.num :=
       "" 'extra.label :=
@@ -1832,7 +1756,7 @@ FUNCTION {reverse.pass}
   extra.label
   duplicate$ empty$
     'skip$
-    { "{\natexlab{\hspace{0pt}" swap$ * "}}" * }
+    { "{\natexlab{" swap$ * "}}" * }
   if$
   'extra.label :=
   label extra.label * 'label :=
@@ -1844,19 +1768,33 @@ ITERATE {forward.pass}
 
 REVERSE {reverse.pass}
 
+FUNCTION {negate.year}
+{ year empty$
+    { "99999" }
+    { year #1 #1 substring$ chr.to.int$ #105 swap$ - int.to.chr$
+      year #2 #1 substring$ chr.to.int$ #105 swap$ - int.to.chr$ *
+      year #3 #1 substring$ chr.to.int$ #105 swap$ - int.to.chr$ *
+      year #4 #1 substring$ chr.to.int$ #105 swap$ - int.to.chr$ *
+    }
+    if$
+}
+
+FUNCTION {calc.short.label}
+{ calc.short.authors short.list
+  'label :=
+}
+
 FUNCTION {bib.sort.order}
 { sort.label
   "    "
   *
-  year field.or.null sortify
+  negate.year field.or.null sortify
+  swap$
   *
-  "    "
-  *
-  title field.or.null
-  sort.format.title
-  *
+  "    " * cite$ *
   #1 entry.max$ substring$
   'sort.key$ :=
+  calc.short.label
 }
 
 ITERATE {bib.sort.order}
@@ -1868,10 +1806,7 @@ FUNCTION {begin.bib}
     'skip$
     { preamble$ write$ newline$ }
   if$
-%  "\begin{thebibliography}{" number.label int.to.str$ * "}" *
-  "\begin{thebibliography}{}"
-  write$ newline$
-  "\expandafter\ifx\csname natexlab\endcsname\relax\def\natexlab#1{#1}\fi"
+  "\begin{etaremune}"
   write$ newline$
 }
 
@@ -1883,7 +1818,7 @@ ITERATE {call.type$}
 
 FUNCTION {end.bib}
 { newline$
-  "\end{thebibliography}" write$ newline$
+  "\end{etaremune}" write$ newline$
 }
 
 EXECUTE {end.bib}
