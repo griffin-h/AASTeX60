@@ -111,6 +111,7 @@
 
 ENTRY
   { address
+    adsurl
     archivePrefix
     author
     booktitle
@@ -137,6 +138,7 @@ misctitle
     volume
     year
     version
+    url
   }
   {}
   { label extra.label sort.label short.list }
@@ -288,7 +290,7 @@ FUNCTION {bbl.volume}
 { "Vol." }
 
 FUNCTION {bbl.version}
-{ "v." }
+{ "v" }
 
 FUNCTION {bbl.of}
 { "of" }
@@ -672,32 +674,9 @@ FUNCTION {output.bibitem}
 FUNCTION {format.doi}
 { doi empty$
     { "" }
-    { "doi:" doi * }
-  if$
-}
-
-FUNCTION {format.eprint}
-{ eprint empty$
-    { "" }
-    { archivePrefix empty$
-        { "" }
-        { archivePrefix ":" * }
-      if$
-      eprint field.or.null
-      *
-    }
-  if$
-}
-
-% Formats a persistent identifier (PID)
-% (typically a DOI or an eprint id)
-% You can easily swap the order of which PID
-% gets picked
-%
-FUNCTION {format.pid}
-{ eprint empty$
-    { format.doi }
-    { format.eprint }
+    { "\hypersetup{urlcolor=magenta}"
+      "doi:\href{https://dx.doi.org/" * doi *
+      "}{" * doi * "}" *}
   if$
 }
 
@@ -903,6 +882,23 @@ FUNCTION {first.page}
   while$
 }
 
+FUNCTION {format.journal}
+{ doi empty$
+    { journal "ATel" =
+        { "\hypersetup{urlcolor=magenta}"
+          "\href{https://astronomerstelegram.org/?read=" *
+          volume * "}{" * journal * "}" *
+        }
+        { journal }
+      if$
+    }
+    { "\hypersetup{urlcolor=magenta}"
+      "\href{https://dx.doi.org/" * doi *
+      "}{" * journal * "}" *
+    }
+  if$
+}
+
 FUNCTION {format.journal.pages}
 { pages empty$
     'skip$
@@ -1016,7 +1012,20 @@ FUNCTION {format.publisher}
             'skip$
             { ": " * }
           if$
-          publisher *
+          url empty$
+            { doi empty$
+              { publisher * }
+              { "\hypersetup{urlcolor=magenta}" *
+                "\href{https://dx.doi.org/" * doi *
+                "}{" * publisher *
+                "}" * }
+              if$
+            }
+            { "\hypersetup{urlcolor=magenta}" *
+              "\href{" * url *
+              "}{" * publisher *
+              "}" * }
+          if$
         }
       if$
       ")" *
@@ -1030,10 +1039,10 @@ FUNCTION {format.aaspublisher}
     { "empty publisher in " cite$ * warning$ }
     'skip$
   if$
-  ", "
+  ""
   address empty$ publisher empty$ and
     'skip$
-    {
+    { ", " *
       add.blank "" *
       address empty$
         'skip$
@@ -1052,22 +1061,6 @@ FUNCTION {format.aaspublisher}
     }
   if$
   output
-}
-
-
-
-STRINGS {oldname}
-
-FUNCTION {name.or.dash}
-{ 's :=
-   oldname empty$
-     { s 'oldname := s }
-     { s oldname =
-         { "---" }
-         { s 'oldname := s }
-       if$
-     }
-   if$
 }
 
 %%%%%%%%  Functions added from astrobib
@@ -1129,26 +1122,136 @@ FUNCTION {format.full.book.spec} % The title should be on the stack.
 }
 
 %%%%%%%  End of functions from astrobib
+STRINGS { bibcode fpage }
+
+FUNCTION {adslink}
+{
+  adsurl missing$
+    { year 'bibcode :=
+      pages missing$
+        { eprint missing$
+            'skip$
+            { bibcode archivePrefix *
+            eprint #1 #4 substring$ *
+            eprint #6 #5 substring$ *
+            'bibcode :=
+            }
+          if$
+        }
+        { journal purify$ "AA" =
+            { bibcode "A&A" * 'bibcode := }
+            { journal purify$ "ARAA" =
+                { bibcode "ARA&A" * 'bibcode := }
+                { bibcode journal * 'bibcode := }
+              if$
+            }
+          if$
+          { bibcode text.length$ #9 < }
+          { bibcode "." * 'bibcode := }
+        while$
+          { bibcode volume * text.length$ #13 < }
+          { bibcode "." * 'bibcode := }
+        while$
+        bibcode volume * 'bibcode :=
+        pages #1 text.prefix$ "L" = pages #1 text.prefix$ "A" = +
+          { bibcode pages #1 text.prefix$ * 'bibcode :=
+            pages first.page #2 #4 substring$ 'fpage := }
+          { pages first.page 'fpage := }
+        if$
+          { bibcode fpage * text.length$ #18 < }
+          { bibcode "." * 'bibcode := }
+        while$
+        bibcode fpage * 'bibcode :=
+        }
+      if$
+      bibcode author purify$ #1 text.prefix$ * 'bibcode :=
+      "https://ui.adsabs.harvard.edu/#abs/" bibcode *
+    }
+  { adsurl }
+  if$
+}
+
+FUNCTION {format.eprint}
+{ eprint empty$
+    { "" }
+    { archivePrefix empty$
+        { "" }
+        { archivePrefix "arXiv" =
+            { "\hypersetup{urlcolor=magenta}"
+              "\href{https://arxiv.org/abs/" *
+              eprint * "}{arXiv}{:}" *
+            }
+            { archivePrefix ":" * }
+          if$
+        }
+      if$
+      archivePrefix "arXiv" =
+        { "\hypersetup{urlcolor=blue}"
+          "\href{" * adslink * "}{" *
+          eprint * "}" *
+        }
+        { archivePrefix "ascl" =
+            { "\hypersetup{urlcolor=magenta}"
+              "\href{https://ascl.net/" * eprint *
+              "}{" * eprint * "}" *
+            }
+            { eprint field.or.null }
+          if$
+        }
+      if$
+      *
+    }
+  if$
+}
+% Formats a persistent identifier (PID)
+% (typically a DOI or an eprint id)
+% You can easily swap the order of which PID
+% gets picked
+%
+FUNCTION {format.pid}
+{ eprint empty$
+    { doi empty$
+        { url empty$
+            { "" }
+            { "\hypersetup{urlcolor=magenta}\url{" url * "}" * }
+          if$
+        }
+        { format.doi }
+      if$
+    }
+    { format.eprint }
+  if$
+}
 
 FUNCTION {article}
 { output.bibitem
   format.authors "author" output.check
   author format.key output
-  name.or.dash
   format.date "year" output.check
   date.block
   crossref missing$
-    { journal
-      "journal" output.check
-      format.vol.num.pages output
+    { journal missing$
+        'skip$
+        { format.journal
+          "journal" output.check
+        }
+      if$
     }
     { format.article.crossref output.nonnull
       format.pages output
     }
   if$
-  pages empty$
-    { format.pid output }
-    { format.journal.pages }
+  adslink empty$
+    { volume empty$
+        { format.pid output }
+        { ", " * format.vol.num.pages * }
+      if$
+    }
+    { ", " *
+      "\hypersetup{urlcolor=blue}" *
+      "\href{" adslink * "}{" *
+      format.vol.num.pages *
+      format.journal.pages * "}" * }
   if$
   format.note output
   fin.entry
@@ -1159,10 +1262,8 @@ FUNCTION {book}
   author empty$
     { format.editors "author and editor" output.check
       editor format.key output
-      name.or.dash
     }
     { format.authors output.nonnull
-      name.or.dash
       crossref missing$
         { "author and editor" editor either.or.check }
         'skip$
@@ -1185,7 +1286,7 @@ FUNCTION {book}
 %  if$
   format.pages output
   format.note output
-  format.pid output
+%  format.pid output
   fin.entry
 }
 
@@ -1193,7 +1294,6 @@ FUNCTION {booklet}
 { output.bibitem
   format.authors output
   author format.key output
-  name.or.dash
   format.date "year" output.check
   date.block
   format.title "title" output.check
@@ -1209,10 +1309,8 @@ FUNCTION {inbook}
   author empty$
     { format.editors "author and editor" output.check
       editor format.key output
-      name.or.dash
     }
     { format.authors output.nonnull
-      name.or.dash
       crossref missing$
         { "author and editor" editor either.or.check }
         'skip$
@@ -1245,7 +1343,6 @@ FUNCTION {incollection}
 { output.bibitem
   format.authors "author" output.check
   author format.key output
-  name.or.dash
   format.date "year" output.check
   date.block
   bbl.in " " * booktitle format.full.book.spec * output
@@ -1300,7 +1397,6 @@ FUNCTION {manual}
 { output.bibitem
   format.authors output
   author format.key output
-  name.or.dash
   format.date "year" output.check
   date.block
   format.btitle "title" output.check
@@ -1316,7 +1412,6 @@ FUNCTION {mastersthesis}
 { output.bibitem
   format.authors "author" output.check
   author format.key output
-  name.or.dash
   format.date "year" output.check
   date.block
 %  format.title "title" output.check
@@ -1332,14 +1427,13 @@ FUNCTION {misc}
 {output.bibitem
   format.authors output
   author format.key output
-  name.or.dash
   format.date "year" output.check
   date.block
   format.title output
   howpublished output
   format.miscversion output
   format.aaspublisher 
-  format.note output
+%  format.note output
   format.pid output
   fin.entry
 }
@@ -1348,7 +1442,6 @@ FUNCTION {phdthesis}
 { output.bibitem
   format.authors "author" output.check
   author format.key output
-  name.or.dash
   format.date "year" output.check
   date.block
 %  format.title "title" output.check
@@ -1369,7 +1462,6 @@ FUNCTION {proceedings}
   if$
 %  format.editors output
 %  editor format.key output
-  name.or.dash
   format.date "year" output.check
   date.block
   title format.full.book.spec output
@@ -1397,7 +1489,6 @@ FUNCTION {techreport}
 { output.bibitem
   format.authors "author" output.check
   author format.key output
-  name.or.dash
   format.date "year" output.check
   date.block
   format.title "title" output.check
@@ -1413,7 +1504,6 @@ FUNCTION {unpublished}
 { output.bibitem
   format.authors "author" output.check
   author format.key output
-  name.or.dash
   format.date "year" output.check
   date.block
 %  format.title "title" output.check
@@ -1662,10 +1752,68 @@ FUNCTION {initialize.extra.label.stuff}
   #0 'number.label :=
 }
 
+INTEGERS { a b aneg bneg }
+%% takes two arguments a and b, and returns q = a/b, and the remainder a-q*b
+FUNCTION {div} {
+  'a :=
+  'b :=
+  a #0 <
+    { #1 'aneg :=
+      #0 a - 'a := }
+    { #0 'aneg := }
+  if$
+  b #0 <
+    { #1 'bneg :=
+      #0 b - 'b :=
+    }
+    { #0 'bneg := }
+  if$
+  b #0 =
+    {
+      "Division by zero requested, will return 0 0" * warning$
+      #0 #0
+    }
+    {
+      #0                 %% initialize quotient on stack
+      { a b > a b = or }
+      { a b - 'a :=      %% decrement a by b
+        #1 +             %% increment value on stack
+      }
+      while$
+      aneg
+        {
+          a #0 >
+            { b a - 'a :=
+               #-1 swap$ -
+            }
+            { #0 swap$ - }
+          if$
+        }
+        {}
+      if$
+      bneg
+        { #0 swap$ - }
+        {}
+      if$
+      a                  %% push remainder
+    }
+  if$
+}
+
 FUNCTION {forward.pass}
 { last.label label =
     { last.extra.num #1 + 'last.extra.num :=
-      last.extra.num int.to.chr$ 'extra.label :=
+%      last.extra.num int.to.chr$ 'extra.label :=
+      last.extra.num #122 >
+        {
+          last.extra.num #97 - #26 swap$ div
+          #97 + int.to.chr$                   %% remainder; 0..25 -> a..z
+          swap$ #96 + int.to.chr$             %% quotient;  1..26 -> a..z
+          swap$ *
+          'extra.label :=
+        }
+        { last.extra.num int.to.chr$ 'extra.label := }
+      if$
     }
     { "a" chr.to.int$ 'last.extra.num :=
       "" 'extra.label :=
@@ -1684,7 +1832,7 @@ FUNCTION {reverse.pass}
   extra.label
   duplicate$ empty$
     'skip$
-    { "{\natexlab{" swap$ * "}}" * }
+    { "{\natexlab{\hspace{0pt}" swap$ * "}}" * }
   if$
   'extra.label :=
   label extra.label * 'label :=
