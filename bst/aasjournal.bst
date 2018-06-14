@@ -1,54 +1,11 @@
 %%
-%% $Log: aasjournal.bst $
+%% $Log: apj.bst,v $
 
-%% Revision 1.16 2017/10/26 Amy Hendrickson
-%% `url' only active when used in misc
-%%
-%% `note' is disabled in all cases; as is adsnote and adsurl.
-%%
-%% Repair to @misc call to aaspublisher to prevent `, ,'
-%% when there is no publisher listed.
-%%
-%% Make correct hyperlinked content for doi, ascl, and arXiv;
-%% changed definition of FUNCTION {format.eprint} to compare
-%%  archivePrefix with "arXiv" and when they match do
-%%        ' {new.block "\doarXiv{" eprint * "}" * }
-%%                      otherwise do
-%%        ' {new.block "\doeprint{" eprint * "}" * }
-%%
-%% \dodoi, \doarXiv and \doeprint definitions are sent to the top of the .bbl file
-%% with commands found in FUNCTION {begin.bib}.
-%%
-%% bbl.version no longer used, could be deleted.
-%%
-%% Version number is added when author enters: version = {number}, only in `misc'
-%%
-%% Removed `format.doi output' in {article} because in 
-%% combination with { format.pid output } we could get double doi entries 
-%% in the bibliography. 
-%%
-%% Rewrote format.pid so that we can check to see if we have a doi number; in
-%% which case we use that and suppress the arXiv and eprint combination. However,
-%% we do Not eliminate the url field if the author has entered it.
-%%
-%% Deleted format.miscversion and made a simplified way to produce version in @misc
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%% Revision 1.15 2016/10/5 Amy Hendrickson
-%% Changed bbl.version so that there is no longer a trailing `.'
-
-%% Revision 1.14 2016/9/14 Amy Hendrickson
-%% Added URL field 
-
-%% Revision 1.13 2016/8/9 Amy Hendrickson
-%% Change to presort and bibsort to get multiple entries with same author/year
-%% combination to be ordered in bibliography in same order as \cite{}s entered in text.
-
-%% Revision 1.12 2016/2/11 Amy Hendrickson
+%% Revision 1.12 2016/2/11 Amy
 %% Changes to @misc function to specifications by Dr. August Muench.
 %% Made comma appear between title and publisher whether or not there is a version number.
 
-%% Revision 1.11 2015/12/31 Amy Hendrickson
+%% Revision 1.11 2015/12/31 Amy
 %% Changes to @misc function to specifications by Dr. August Muench.
 %% Added version and publisher fields.
 
@@ -66,7 +23,7 @@
 %%
 %% Revision 1.8  2013/01/10 16:31:34  alberto
 %% Added proper formatting of arXiv eprint entries output by ADS
-%% (these are article records, but the eprint id is printed only 
+%% (thse are article records, but the eprint id is printed only 
 %% if no traditional page number is available).  Also added support
 %% for ASCL entries under the "misc" category.
 %%
@@ -100,7 +57,7 @@
 
 
 %%
-%% This originally was file `apj.bst',
+%% This is file `apj.bst',
 %% generated with the docstrip utility.
 %%
 %% The original source files were:
@@ -168,6 +125,7 @@ ENTRY
     journal
     key
     month
+    note
     number
     organization
     pages
@@ -175,12 +133,12 @@ ENTRY
     school
     series
     title
-    misctitle
+misctitle
     type
+    url
     volume
     year
     version
-    url
   }
   {}
   { label extra.label sort.label short.list }
@@ -565,6 +523,23 @@ FUNCTION {format.in.editors}
   if$
 }
 
+FUNCTION {format.note}
+{ note empty$
+    { "" }
+    { note #1 #1 substring$
+      duplicate$ "{" =
+        'skip$
+        { output.state mid.sentence =
+          { "l" }
+          { "u" }
+        if$
+        change.case$
+        }
+      if$
+      note #2 global.max$ substring$ *
+    }
+  if$
+}
 
 FUNCTION {format.title}
 { title empty$
@@ -573,6 +548,22 @@ FUNCTION {format.title}
     }
   if$
 }
+
+
+FUNCTION {format.version}
+{ version empty$
+    { "" }
+    { bbl.version version  * ", " *}
+  if$
+}
+
+FUNCTION {format.miscversion}
+{ version empty$
+    { "" }
+    { bbl.version version  * "" *}
+  if$
+}
+
 
 FUNCTION {format.full.names}
 {'s :=
@@ -680,6 +671,7 @@ FUNCTION {output.bibitem}
 }
 
 
+<<<<<<< HEAD
 FUNCTION {format.url}
 { url empty$
     { "" }
@@ -697,6 +689,14 @@ FUNCTION {format.doi}
 { doi empty$
     { "" }
     { "\dodoi{" doi * "}" * }
+=======
+FUNCTION {format.doi}
+{ doi empty$
+    { "" }
+    { "\hypersetup{urlcolor=magenta}"
+      "doi:\href{https://dx.doi.org/" * doi *
+      "}{" * doi * "}" *}
+>>>>>>> 592567c39fd7ee21860550b90aa1f38933edd503
   if$
 }
 
@@ -906,7 +906,11 @@ FUNCTION {format.journal}
 { doi empty$
     { journal "ATel" =
         { "\hypersetup{urlcolor=magenta}"
+<<<<<<< HEAD
           "\href{http://astronomerstelegram.org/?read=" *
+=======
+          "\href{https://astronomerstelegram.org/?read=" *
+>>>>>>> 592567c39fd7ee21860550b90aa1f38933edd503
           volume * "}{" * journal * "}" *
         }
         { journal }
@@ -932,7 +936,6 @@ FUNCTION {format.journal.pages}
     }
   if$
 }
-
 
 FUNCTION {format.vol.num.pages}
 { volume field.or.null
@@ -1060,9 +1063,16 @@ FUNCTION {format.aaspublisher}
     { "empty publisher in " cite$ * warning$ }
     'skip$
   if$
+<<<<<<< HEAD
   address empty$ publisher empty$ and
     'skip$
     { ", "
+=======
+  ""
+  address empty$ publisher empty$ and
+    'skip$
+    { ", " *
+>>>>>>> 592567c39fd7ee21860550b90aa1f38933edd503
       add.blank "" *
       address empty$
         'skip$
@@ -1311,8 +1321,8 @@ FUNCTION {book}
 %    }
 %  if$
   format.pages output
-  format.pid output
-  format.url output
+  format.note output
+%  format.pid output
   fin.entry
 }
 
@@ -1325,8 +1335,8 @@ FUNCTION {booklet}
   format.title "title" output.check
   howpublished output
   address output
+  format.note output
   format.pid output
-  format.url output
   fin.entry
 }
 
@@ -1361,7 +1371,7 @@ FUNCTION {inbook}
 %    }
 %  if$
   format.pages "pages" output.check
-  format.url output
+  format.note output
   fin.entry
 }
 
@@ -1414,8 +1424,7 @@ FUNCTION {inproceedings}
 %    }
 %  if$
   format.pages output
-  format.pid output
-  format.url output
+  format.note output
   fin.entry
 }
 
@@ -1431,8 +1440,8 @@ FUNCTION {manual}
   format.edition output
   organization output
   address output
+  format.note output
   format.pid output
-%%  format.url output
   fin.entry
 }
 
@@ -1446,8 +1455,8 @@ FUNCTION {mastersthesis}
   bbl.mthesis format.thesis.type output.nonnull
   school "school" output.check
   address output
+  format.note output
   format.pid output
-  format.url output
   fin.entry
 }
 
@@ -1481,8 +1490,8 @@ FUNCTION {phdthesis}
   bbl.phdthesis format.thesis.type output.nonnull
   school "school" output.check
   address output
+  format.note output
   format.pid output
-  format.url output
   fin.entry
 }
 
@@ -1514,7 +1523,7 @@ FUNCTION {proceedings}
 %  organization output
 %  publisher output
   format.pages output
-  format.url output
+  format.note output
   fin.entry
 }
 
@@ -1528,8 +1537,8 @@ FUNCTION {techreport}
   format.tr.number output.nonnull
   institution "institution" output.check
   address output
+  format.note output
   format.pid output
-%%  format.url output
   fin.entry
 }
 
@@ -1540,8 +1549,8 @@ FUNCTION {unpublished}
   format.date "year" output.check
   date.block
 %  format.title "title" output.check
+  format.note "note" output.check
   format.pid output
-%%  format.url output
   fin.entry
 }
 
@@ -1763,14 +1772,9 @@ FUNCTION {presort}
   *
   "    "
   *
-%% August 2016
-%% commenting out this combination gets the cites right but references wrong
-%%  title field.or.null
-%%  sort.format.title
-%%  *
-%%
-%% with only this line on, we get cites right but references wrong
- sort.format.title
+  title field.or.null
+  sort.format.title
+  *
   #1 entry.max$ substring$
   'sort.key$ :=
 }
@@ -1890,11 +1894,9 @@ FUNCTION {bib.sort.order}
   *
   "    "
   *
-%% Commented out August 2016, so that multiple indentical author/year
-%% combinations are entered in the order that \cite{}s are found in text.
-%  title field.or.null
-%  sort.format.title
-%  *
+  title field.or.null
+  sort.format.title
+  *
   #1 entry.max$ substring$
   'sort.key$ :=
 }
@@ -1908,6 +1910,7 @@ FUNCTION {begin.bib}
     'skip$
     { preamble$ write$ newline$ }
   if$
+%  "\begin{thebibliography}{" number.label int.to.str$ * "}" *
   "\begin{thebibliography}{}"
   write$ newline$
   "\expandafter\ifx\csname natexlab\endcsname\relax\def\natexlab#1{#1}\fi"
@@ -1932,4 +1935,4 @@ FUNCTION {end.bib}
 EXECUTE {end.bib}
 %% End of customized bst file
 %%
-%% End of file `aasjournal.bst'.
+%% End of file `apj.bst'.
