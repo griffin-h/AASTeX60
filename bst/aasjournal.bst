@@ -1,11 +1,54 @@
 %%
-%% $Log: apj.bst,v $
+%% $Log: aasjournal.bst $
 
-%% Revision 1.12 2016/2/11 Amy
+%% Revision 1.16 2017/10/26 Amy Hendrickson
+%% `url' only active when used in misc
+%%
+%% `note' is disabled in all cases; as is adsnote and adsurl.
+%%
+%% Repair to @misc call to aaspublisher to prevent `, ,'
+%% when there is no publisher listed.
+%%
+%% Make correct hyperlinked content for doi, ascl, and arXiv;
+%% changed definition of FUNCTION {format.eprint} to compare
+%%  archivePrefix with "arXiv" and when they match do
+%%        ' {new.block "\doarXiv{" eprint * "}" * }
+%%                      otherwise do
+%%        ' {new.block "\doeprint{" eprint * "}" * }
+%%
+%% \dodoi, \doarXiv and \doeprint definitions are sent to the top of the .bbl file
+%% with commands found in FUNCTION {begin.bib}.
+%%
+%% bbl.version no longer used, could be deleted.
+%%
+%% Version number is added when author enters: version = {number}, only in `misc'
+%%
+%% Removed `format.doi output' in {article} because in 
+%% combination with { format.pid output } we could get double doi entries 
+%% in the bibliography. 
+%%
+%% Rewrote format.pid so that we can check to see if we have a doi number; in
+%% which case we use that and suppress the arXiv and eprint combination. However,
+%% we do Not eliminate the url field if the author has entered it.
+%%
+%% Deleted format.miscversion and made a simplified way to produce version in @misc
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% Revision 1.15 2016/10/5 Amy Hendrickson
+%% Changed bbl.version so that there is no longer a trailing `.'
+
+%% Revision 1.14 2016/9/14 Amy Hendrickson
+%% Added URL field 
+
+%% Revision 1.13 2016/8/9 Amy Hendrickson
+%% Change to presort and bibsort to get multiple entries with same author/year
+%% combination to be ordered in bibliography in same order as \cite{}s entered in text.
+
+%% Revision 1.12 2016/2/11 Amy Hendrickson
 %% Changes to @misc function to specifications by Dr. August Muench.
 %% Made comma appear between title and publisher whether or not there is a version number.
 
-%% Revision 1.11 2015/12/31 Amy
+%% Revision 1.11 2015/12/31 Amy Hendrickson
 %% Changes to @misc function to specifications by Dr. August Muench.
 %% Added version and publisher fields.
 
@@ -23,7 +66,7 @@
 %%
 %% Revision 1.8  2013/01/10 16:31:34  alberto
 %% Added proper formatting of arXiv eprint entries output by ADS
-%% (thse are article records, but the eprint id is printed only 
+%% (these are article records, but the eprint id is printed only 
 %% if no traditional page number is available).  Also added support
 %% for ASCL entries under the "misc" category.
 %%
@@ -57,7 +100,7 @@
 
 
 %%
-%% This is file `apj.bst',
+%% This originally was file `apj.bst',
 %% generated with the docstrip utility.
 %%
 %% The original source files were:
@@ -125,7 +168,6 @@ ENTRY
     journal
     key
     month
-    note
     number
     organization
     pages
@@ -133,7 +175,7 @@ ENTRY
     school
     series
     title
-misctitle
+    misctitle
     type
     volume
     year
@@ -523,23 +565,6 @@ FUNCTION {format.in.editors}
   if$
 }
 
-FUNCTION {format.note}
-{ note empty$
-    { "" }
-    { note #1 #1 substring$
-      duplicate$ "{" =
-        'skip$
-        { output.state mid.sentence =
-          { "l" }
-          { "u" }
-        if$
-        change.case$
-        }
-      if$
-      note #2 global.max$ substring$ *
-    }
-  if$
-}
 
 FUNCTION {format.title}
 { title empty$
@@ -548,22 +573,6 @@ FUNCTION {format.title}
     }
   if$
 }
-
-
-FUNCTION {format.version}
-{ version empty$
-    { "" }
-    { bbl.version version  * ", " *}
-  if$
-}
-
-FUNCTION {format.miscversion}
-{ version empty$
-    { "" }
-    { bbl.version version  * "" *}
-  if$
-}
-
 
 FUNCTION {format.full.names}
 {'s :=
@@ -671,12 +680,23 @@ FUNCTION {output.bibitem}
 }
 
 
+FUNCTION {format.url}
+{ url empty$
+    { "" }
+    { new.block "\url{" url * "}" * }
+  if$
+}
+
+% Formats a persistent identifier (PID)
+% (typically a DOI or an eprint id)
+% You can easily swap the order of which PID
+% gets picked
+%
+
 FUNCTION {format.doi}
 { doi empty$
     { "" }
-    { "\hypersetup{urlcolor=magenta}"
-      "doi:\href{https://dx.doi.org/" * doi *
-      "}{" * doi * "}" *}
+    { "\dodoi{" doi * "}" * }
   if$
 }
 
@@ -886,7 +906,7 @@ FUNCTION {format.journal}
 { doi empty$
     { journal "ATel" =
         { "\hypersetup{urlcolor=magenta}"
-          "\href{https://astronomerstelegram.org/?read=" *
+          "\href{http://astronomerstelegram.org/?read=" *
           volume * "}{" * journal * "}" *
         }
         { journal }
@@ -912,6 +932,7 @@ FUNCTION {format.journal.pages}
     }
   if$
 }
+
 
 FUNCTION {format.vol.num.pages}
 { volume field.or.null
@@ -1039,10 +1060,9 @@ FUNCTION {format.aaspublisher}
     { "empty publisher in " cite$ * warning$ }
     'skip$
   if$
-  ""
   address empty$ publisher empty$ and
     'skip$
-    { ", " *
+    { ", "
       add.blank "" *
       address empty$
         'skip$
@@ -1132,8 +1152,20 @@ FUNCTION {adslink}
         { eprint missing$
             'skip$
             { bibcode archivePrefix *
-            eprint #1 #4 substring$ *
-            eprint #6 #5 substring$ *
+            'bibcode :=
+              { bibcode text.length$ #9 < }
+              { bibcode "." * 'bibcode := }
+            while$
+            bibcode
+            archivePrefix "arXiv" =
+              { eprint #1 #4 substring$ *
+                eprint #6 #5 substring$ *
+              }
+              { "soft" *
+                eprint #3 #2 substring$ *
+                eprint #6 #3 substring$ *
+              }
+            if$
             'bibcode :=
             }
           if$
@@ -1179,30 +1211,28 @@ FUNCTION {format.eprint}
         { archivePrefix "arXiv" =
             { "\hypersetup{urlcolor=magenta}"
               "\href{https://arxiv.org/abs/" *
-              eprint * "}{arXiv}{:}" *
+              eprint * "}{" *
+              archivePrefix * "}{:}" *
             }
-            { archivePrefix ":" * }
+            { archivePrefix "ascl" =
+                { "\hypersetup{urlcolor=magenta}"
+                  "\href{https://ascl.net/" *
+                  eprint * "}{" *
+                  archivePrefix * "}:" *
+                }
+                { archivePrefix ":" * }
+              if$
+            }
           if$
         }
       if$
-      archivePrefix "arXiv" =
-        { "\hypersetup{urlcolor=blue}"
-          "\href{" * adslink * "}{" *
-          eprint * "}" *
-        }
-        { archivePrefix "ascl" =
-            { "\hypersetup{urlcolor=magenta}"
-              "\href{https://ascl.net/" * eprint *
-              "}{" * eprint * "}" *
-            }
-            { eprint field.or.null }
-          if$
-        }
-      if$
-      *
+      "\hypersetup{urlcolor=blue}" *
+      "\href{" * adslink *
+      "}{" * eprint * "}" *
     }
   if$
 }
+
 % Formats a persistent identifier (PID)
 % (typically a DOI or an eprint id)
 % You can easily swap the order of which PID
@@ -1241,19 +1271,15 @@ FUNCTION {article}
       format.pages output
     }
   if$
-  adslink empty$
-    { volume empty$
-        { format.pid output }
-        { ", " * format.vol.num.pages * }
-      if$
-    }
+  volume empty$
+    { format.pid output }
     { ", " *
       "\hypersetup{urlcolor=blue}" *
       "\href{" adslink * "}{" *
       format.vol.num.pages *
-      format.journal.pages * "}" * }
+      format.journal.pages * "}" *
+    }
   if$
-  format.note output
   fin.entry
 }
 
@@ -1285,8 +1311,8 @@ FUNCTION {book}
 %    }
 %  if$
   format.pages output
-  format.note output
-%  format.pid output
+  format.pid output
+  format.url output
   fin.entry
 }
 
@@ -1299,8 +1325,8 @@ FUNCTION {booklet}
   format.title "title" output.check
   howpublished output
   address output
-  format.note output
   format.pid output
+  format.url output
   fin.entry
 }
 
@@ -1335,7 +1361,7 @@ FUNCTION {inbook}
 %    }
 %  if$
   format.pages "pages" output.check
-  format.note output
+  format.url output
   fin.entry
 }
 
@@ -1358,8 +1384,9 @@ FUNCTION {incollection}
 %      format.chapter.pages output
 %    }
 %  if$
-  format.pages "pages" output.check
-  format.note output
+%  format.pages "pages" output.check
+%  format.pid output
+  format.url output
   fin.entry
 }
 
@@ -1387,7 +1414,8 @@ FUNCTION {inproceedings}
 %    }
 %  if$
   format.pages output
-  format.note output
+  format.pid output
+  format.url output
   fin.entry
 }
 
@@ -1403,8 +1431,8 @@ FUNCTION {manual}
   format.edition output
   organization output
   address output
-  format.note output
   format.pid output
+%%  format.url output
   fin.entry
 }
 
@@ -1418,8 +1446,8 @@ FUNCTION {mastersthesis}
   bbl.mthesis format.thesis.type output.nonnull
   school "school" output.check
   address output
-  format.note output
   format.pid output
+  format.url output
   fin.entry
 }
 
@@ -1430,10 +1458,15 @@ FUNCTION {misc}
   format.date "year" output.check
   date.block
   format.title output
+  version empty$
+    'skip$
+    { version output}
+  if$
   howpublished output
-  format.miscversion output
-  format.aaspublisher 
-%  format.note output
+  publisher empty$
+    {}
+    {format.aaspublisher}
+  if$
   format.pid output
   fin.entry
 }
@@ -1448,8 +1481,8 @@ FUNCTION {phdthesis}
   bbl.phdthesis format.thesis.type output.nonnull
   school "school" output.check
   address output
-  format.note output
   format.pid output
+  format.url output
   fin.entry
 }
 
@@ -1481,7 +1514,7 @@ FUNCTION {proceedings}
 %  organization output
 %  publisher output
   format.pages output
-  format.note output
+  format.url output
   fin.entry
 }
 
@@ -1495,8 +1528,8 @@ FUNCTION {techreport}
   format.tr.number output.nonnull
   institution "institution" output.check
   address output
-  format.note output
   format.pid output
+%%  format.url output
   fin.entry
 }
 
@@ -1507,8 +1540,8 @@ FUNCTION {unpublished}
   format.date "year" output.check
   date.block
 %  format.title "title" output.check
-  format.note "note" output.check
   format.pid output
+%%  format.url output
   fin.entry
 }
 
@@ -1730,9 +1763,14 @@ FUNCTION {presort}
   *
   "    "
   *
-  title field.or.null
-  sort.format.title
-  *
+%% August 2016
+%% commenting out this combination gets the cites right but references wrong
+%%  title field.or.null
+%%  sort.format.title
+%%  *
+%%
+%% with only this line on, we get cites right but references wrong
+ sort.format.title
   #1 entry.max$ substring$
   'sort.key$ :=
 }
@@ -1852,9 +1890,11 @@ FUNCTION {bib.sort.order}
   *
   "    "
   *
-  title field.or.null
-  sort.format.title
-  *
+%% Commented out August 2016, so that multiple indentical author/year
+%% combinations are entered in the order that \cite{}s are found in text.
+%  title field.or.null
+%  sort.format.title
+%  *
   #1 entry.max$ substring$
   'sort.key$ :=
 }
@@ -1868,10 +1908,13 @@ FUNCTION {begin.bib}
     'skip$
     { preamble$ write$ newline$ }
   if$
-%  "\begin{thebibliography}{" number.label int.to.str$ * "}" *
   "\begin{thebibliography}{}"
   write$ newline$
   "\expandafter\ifx\csname natexlab\endcsname\relax\def\natexlab#1{#1}\fi"
+  write$ newline$
+  "\providecommand{\url}[1]{\href{#1}{#1}}"
+  write$ newline$
+  "\providecommand{\dodoi}[1]{doi:~\href{http://doi.org/#1}{\nolinkurl{#1}}}"
   write$ newline$
 }
 
@@ -1889,4 +1932,4 @@ FUNCTION {end.bib}
 EXECUTE {end.bib}
 %% End of customized bst file
 %%
-%% End of file `apj.bst'.
+%% End of file `aasjournal.bst'.
