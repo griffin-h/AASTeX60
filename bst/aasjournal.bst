@@ -671,32 +671,12 @@ FUNCTION {output.bibitem}
 }
 
 
-<<<<<<< HEAD
-FUNCTION {format.url}
-{ url empty$
-    { "" }
-    { new.block "\url{" url * "}" * }
-  if$
-}
-
-% Formats a persistent identifier (PID)
-% (typically a DOI or an eprint id)
-% You can easily swap the order of which PID
-% gets picked
-%
-
-FUNCTION {format.doi}
-{ doi empty$
-    { "" }
-    { "\dodoi{" doi * "}" * }
-=======
 FUNCTION {format.doi}
 { doi empty$
     { "" }
     { "\hypersetup{urlcolor=magenta}"
       "doi:\href{https://dx.doi.org/" * doi *
       "}{" * doi * "}" *}
->>>>>>> 592567c39fd7ee21860550b90aa1f38933edd503
   if$
 }
 
@@ -906,11 +886,7 @@ FUNCTION {format.journal}
 { doi empty$
     { journal "ATel" =
         { "\hypersetup{urlcolor=magenta}"
-<<<<<<< HEAD
           "\href{http://astronomerstelegram.org/?read=" *
-=======
-          "\href{https://astronomerstelegram.org/?read=" *
->>>>>>> 592567c39fd7ee21860550b90aa1f38933edd503
           volume * "}{" * journal * "}" *
         }
         { journal }
@@ -1063,16 +1039,9 @@ FUNCTION {format.aaspublisher}
     { "empty publisher in " cite$ * warning$ }
     'skip$
   if$
-<<<<<<< HEAD
   address empty$ publisher empty$ and
     'skip$
     { ", "
-=======
-  ""
-  address empty$ publisher empty$ and
-    'skip$
-    { ", " *
->>>>>>> 592567c39fd7ee21860550b90aa1f38933edd503
       add.blank "" *
       address empty$
         'skip$
