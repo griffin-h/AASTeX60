@@ -1365,7 +1365,6 @@ FUNCTION {incollection}
 %  if$
 %  format.pages "pages" output.check
 %  format.pid output
-  format.url output
   fin.entry
 }
 
