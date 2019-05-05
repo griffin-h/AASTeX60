@@ -889,7 +889,14 @@ FUNCTION {format.journal}
           "\href{http://astronomerstelegram.org/?read=" *
           volume * "}{" * journal * "}" *
         }
-        { journal }
+        { journal "GCN" =
+          {  "\hypersetup{urlcolor=magenta}"
+             "\href{https://gcn.gsfc.nasa.gov/gcn3/" *
+             volume * ".gcn3}{" * journal * "}" *
+          }
+          { journal }
+          if$
+        }
       if$
     }
     { "\hypersetup{urlcolor=magenta}"
@@ -1157,7 +1164,7 @@ FUNCTION {adslink}
               if$
             }
           if$
-          { bibcode text.length$ #9 < }
+          { bibcode text.length$ { journal "GCN" = #8 #9 if$ } < }
           { bibcode "." * 'bibcode := }
         while$
           { bibcode volume * text.length$ #13 < }
