@@ -1404,7 +1404,7 @@ FUNCTION {inproceedings}
 %    }
 %  if$
   format.pages output
-  format.note output
+  format.pid output
   fin.entry
 }
 
