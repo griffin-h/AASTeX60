@@ -1260,10 +1260,15 @@ FUNCTION {article}
   volume empty$
     { format.pid output }
     { ", " *
-      "\hypersetup{urlcolor=blue}" *
-      "\href{" adslink * "}{" *
-      format.vol.num.pages *
-      format.journal.pages * "}" *
+      adslink text.length$ #53 =
+        { "\hypersetup{urlcolor=blue}" *
+          "\href{" adslink * "}{" *
+          format.vol.num.pages *
+          format.journal.pages *
+          "}" * }
+        { format.vol.num.pages
+          format.journal.pages * }
+      if$
     }
   if$
   fin.entry
