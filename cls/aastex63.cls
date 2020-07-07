@@ -214,20 +214,20 @@ access fonts for the \string\astro\space command
 }\stop}
 
    \def\apjsecfont{\normalsize}
-   \def\secnum@size{\small}
+   \def\secnum@size{\normalsize}
    \def\subsecnum@size{\normalsize}
 
     \def\AppendixApjSectionMarkInTitle#1{\relax}
 \newif\ifletteredappendix
      \DeclareOption{letteredappendix}{\global\letteredappendixtrue
-       \def\AppendixApjSectionMarkInTitle#1{#1.\ }
+       \def\AppendixApjSectionMarkInTitle#1{#1.}
      }
 
 %% this option is obsolete, since letteredappendix is a more logical name;
 %%  but keeping it here in case someone uses it, set to be the same as
 %% letteredappendix.
      \DeclareOption{numberedappendix}{\global\letteredappendixtrue
-       \def\AppendixApjSectionMarkInTitle#1{#1.\ }
+       \def\AppendixApjSectionMarkInTitle#1{#1.}
      }
 
      \newif\if@number@appendix@floats\@number@appendix@floatsfalse
@@ -778,7 +778,7 @@ footnote\the\fncount\endcsname{\if@two@col\hsize=.5\textwidth
 %% 
 \renewcommand\title[2][]{%
 \def\@title{\setbox0=\vbox{\let\footnote\tempfootnote #2}%
-{\let\footnote\tempfootnoteintitle%\uppercase
+{\let\footnote\tempfootnoteintitle\large
 {#2}}%% here???
 \kickoutfootnotes
 \ifdoublespace\vskip 3\baselineskip\fi
@@ -802,7 +802,7 @@ footnote\the\fncount\endcsname{\if@two@col\hsize=.5\textwidth
 
 
 \def\frontmatter@authorformat{\small\advance\baselineskip-3pt
-\parskip=0pt\ifrnaas\else\scshape\fi
+\parskip=0pt
 \ifmodern
 \vskip48pt
 \centering
@@ -817,7 +817,6 @@ footnote\the\fncount\endcsname{\if@two@col\hsize=.5\textwidth
 
 \def\frontmatter@affiliationfont{\normalfont\footnotesize
 %% changed october 2017
-\it
 \iflongauthor\else
 \ifrnaas\else
 \rightskip-12pt plus 1fil
@@ -876,7 +875,7 @@ footnote\the\fncount\endcsname{\if@two@col\hsize=.5\textwidth
 \def\frontmatter@preabstractspace{12pt}
 \def\frontmatter@postabstractspace{12pt}
 
-\def\abstractname{ABSTRACT}
+\def\abstractname{\bfseries Abstract}
 \long\def\frontmatter@abstractheading{%
  \begingroup
   \centering
@@ -962,7 +961,7 @@ footnote\the\fncount\endcsname{\if@two@col\hsize=.5\textwidth
 %  ****************************************
 
 
-  \def\@keys@name{\textit{Keywords:}\/~\mbox{}}%
+  \def\@keys@name{\textit{Unified Astronomy Thesaurus concepts:}\/~\mbox{}}%
 
 \newlength{\keys@width}
 \def\frontmatter@keys@format{\ifmodern\vskip0pt\else\vspace*{0.5mm}\fi%
@@ -971,8 +970,7 @@ footnote\the\fncount\endcsname{\if@two@col\hsize=.5\textwidth
 \rightskip=0.5in
 \leftskip=34pt
 \fi
-\parindent=0pt%
-    \hangindent=\keys@width\hangafter=1\normalsize}%
+\parindent=0pt\normalsize}%
 \def\@keywords@produce#1{%
  \showKEYS@sw{%
   \begingroup%
@@ -1125,12 +1123,12 @@ footnote\the\fncount\endcsname{\if@two@col\hsize=.5\textwidth
 \def\p@subparagraph   {}
 
 
-\def\sec@upcase#1{\uppercase{#1}}
+\def\sec@upcase#1{\bfseries #1}
 \def\subsec@upcase#1{\relax{#1}}
 
 %
 % How the section number will appear in the section title - AV
-\def\ApjSectionMarkInTitle#1{\ifrnaas\else #1.\ \fi}
+\def\ApjSectionMarkInTitle#1{\ifrnaas\else #1.\fi}
 \def\ApjSectionpenalty{0}
 
 
@@ -1143,8 +1141,8 @@ footnote\the\fncount\endcsname{\if@two@col\hsize=.5\textwidth
     \refstepcounter{#1} \edef \@svsec {\ApjSectionMarkInTitle 
     {\csname the#1\endcsname}}\fi
   \@hangfrom {\hskip #3\relax 
-    \ifnum #2=1{\secnum@size {\rm\@svsec~}}%
-    \else {\subsecnum@size {\rm\@svsec~}}\fi }%
+    \ifnum #2=1{\secnum@size {\bfseries\@svsec~}}%
+    \else {\subsecnum@size {\itshape\@svsec~}}\fi }%
   {\interlinepenalty \@M 
    \ifnum #2=1\sec@upcase{#8}%
    \else \subsec@upcase{#8}\fi\par}\endgroup 
@@ -1246,13 +1244,13 @@ the#1\endcsname}
 \global\appendixontrue
 \if@two@col  
 \onecolumngrid
-\noindent\mbox{}\vrule height 24pt width0pt\hfill{\apjsecfont APPENDIX}\hfill\mbox{}\par
+\noindent\mbox{}\vrule height 24pt width0pt\hfill{\apjsecfont\bfseries Appendix}\hfill\mbox{}\par
 \vskip18pt
    \if@two@col@app\global\@two@coltrue\twocolumngrid \fi
    % above, we want onecolumngrid to be default. Only twocolumn is asked for in documentclass option
 \else
 \noindent\mbox{}\vrule height 24pt width0pt\hfill{\apjsecfont
-APPENDIX}\hfill\mbox{}\par 
+\bfseries Appendix}\hfill\mbox{}\par
 \vskip18pt
     \if@two@col@app\global\@two@coltrue\twocolumngrid 
          \fi\fi
@@ -1302,7 +1300,7 @@ APPENDIX}\hfill\mbox{}\par
   \onecolumngrid
   \par
   \vspace{10pt plus 3pt}
-  \noindent \makebox[\textwidth][c]{\small\scshape REFERENCES}
+  \noindent \makebox[\textwidth][c]{\bfseries References}
   \par
   \vspace*{4pt plus 3pt}
   \set@column@hsize{2}\twocolumngrid
@@ -1332,7 +1330,7 @@ APPENDIX}\hfill\mbox{}\par
 \onecolumngrid
 \vspace{20pt}
 \goodbreak
-    \hbox to\textwidth{\hss\normalsize REFERENCES\hss}
+    \hbox to\textwidth{\hss\bfseries References\hss}
 \vspace{6pt}\parskip=0pt
 \twocolumngrid 
 \par
@@ -6234,7 +6232,7 @@ on page
 \def\new@author@def#1#2{%
  \move@AU\move@AF\move@AUAF
  \let\@AF@join\@author@join
- \def\@author{{\href{http://orcid.org/#1}{#2%
+ \def\@author{{\normalsize #2\href{http://orcid.org/#1}{%
 \openin1 Orcid-ID.png \ifeof1
 %% message for authors??
 %\typeout{^^J^^J  ! Missing File: Orcid-ID.png; needed for Orcid Author icon !
