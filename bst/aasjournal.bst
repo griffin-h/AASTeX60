@@ -1893,6 +1893,8 @@ FUNCTION {begin.bib}
 %  "\begin{thebibliography}{" number.label int.to.str$ * "}" *
   "\begin{thebibliography}{}"
   write$ newline$
+  "\footnotesize"
+  write$ newline$
   "\expandafter\ifx\csname natexlab\endcsname\relax\def\natexlab#1{#1}\fi"
   write$ newline$
   "\providecommand{\url}[1]{\href{#1}{#1}}"
