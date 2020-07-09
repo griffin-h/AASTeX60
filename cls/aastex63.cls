@@ -801,7 +801,7 @@ footnote\the\fncount\endcsname{\if@two@col\hsize=.5\textwidth
 \def\frontmatter@title@below{\vskip8pt}%
 
 
-\def\frontmatter@authorformat{\small\advance\baselineskip-3pt
+\def\frontmatter@authorformat{\advance\baselineskip-3pt
 \parskip=0pt
 \ifmodern
 \vskip48pt
@@ -6232,7 +6232,7 @@ on page
 \def\new@author@def#1#2{%
  \move@AU\move@AF\move@AUAF
  \let\@AF@join\@author@join
- \def\@author{{\normalsize #2\href{http://orcid.org/#1}{%
+ \def\@author{{#2\href{http://orcid.org/#1}{%
 \openin1 Orcid-ID.png \ifeof1
 %% message for authors??
 %\typeout{^^J^^J  ! Missing File: Orcid-ID.png; needed for Orcid Author icon !
